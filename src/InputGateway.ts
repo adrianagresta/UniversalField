@@ -9,6 +9,7 @@ enum InputGatewayEvents {
  * Generates an InputGateway promise for a given CSS selector. Awaiting the promise means awaiting 
  * the presence of the element in the DOM. If present, it will return the InputGateway.
  * 
+ * This is the desired way of creating an InputGateway. 
  */
 class InputGatewayFactory {
     private static pendingGateways = new Set<{ selector: string, resolve: (gateway: InputGateway) => void }>();
@@ -58,6 +59,7 @@ var InputGateway_DEBUG = true;
 /**
  * A gateway class for managing HTML input elements, facilitating value manipulation 
  * and event handling, including support for elements not yet present in the DOM.
+ * Avoid using InputGatway directly. Use InputGatway.createInputGateway instead.
  */
 class InputGateway {
     // The DOM element instance managed by this gateway.
@@ -73,6 +75,7 @@ class InputGateway {
     constructor(cssSelector: string) {
         this.eventHandlers = {} as Record<InputGatewayEvents, Function[]>; // Initialize eventHandlers
         this.element = document.querySelector(cssSelector)!;
+        this.init();
     }
 
     /**

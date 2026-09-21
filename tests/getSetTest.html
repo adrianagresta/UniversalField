@@ -6,57 +6,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>InputGateway Test Sandbox</title>
     <script type="module">
-        import InputGateway from '../dist/UniversalField.js';
+        import InputGateway, { InputGatewayFactory } from '../dist/UniversalField.js';
 
         // Initialize gateways for all inputs
-        const gateways = {
-            text: new InputGateway('#textInput'),
-            number: new InputGateway('#numberInput'),
-            email: new InputGateway('#emailInput'),
-            url: new InputGateway('#urlInput'),
-            tel: new InputGateway('#telInput'),
-            search: new InputGateway('#searchInput'),
-            date: new InputGateway('#dateInput'),
-            datetime: new InputGateway('#datetimeInput'),
-            time: new InputGateway('#timeInput'),
-            month: new InputGateway('#monthInput'),
-            week: new InputGateway('#weekInput'),
-            color: new InputGateway('#colorInput'),
-            checkbox1: new InputGateway('#checkboxTrue'),
-            checkbox2: new InputGateway('#checkboxFalse'),
-            radioGroupA: new InputGateway('[name="radioGroup"]'), // One input, but grouped
-            selectSingle: new InputGateway('#selectSingle'),
-            selectMulti: new InputGateway('#selectMulti'),
-        };
+        const gateways = {};
 
-        async function processInputs() {
-            const textValue = await gateways.text.get();
-            const numberValue = await gateways.number.get();
-            const emailValue = await gateways.email.get();
-            const urlValue = await gateways.url.get();
-            const telValue = await gateways.tel.get();
-            const searchValue = await gateways.search.get();
-            const dateValue = await gateways.date.get();
-            const datetimeValue = await gateways.datetime.get();
-            const timeValue = await gateways.time.get();
-            const monthValue = await gateways.month.get();
-            const weekValue = await gateways.week.get();
-            const colorValue = await gateways.color.get();
+        async function initGateways() {
+            gateways.text = await InputGatewayFactory.createInputGateway('#textInput');
+            gateways.number = await InputGatewayFactory.createInputGateway('#numberInput');
+            gateways.email = await InputGatewayFactory.createInputGateway('#emailInput');
+            gateways.url = await InputGatewayFactory.createInputGateway('#urlInput');
+            gateways.tel = await InputGatewayFactory.createInputGateway('#telInput');
+            gateways.search = await InputGatewayFactory.createInputGateway('#searchInput');
+            gateways.date = await InputGatewayFactory.createInputGateway('#dateInput');
+            gateways.datetime = await InputGatewayFactory.createInputGateway('#datetimeInput');
+            gateways.time = await InputGatewayFactory.createInputGateway('#timeInput');
+            gateways.month = await InputGatewayFactory.createInputGateway('#monthInput');
+            gateways.week = await InputGatewayFactory.createInputGateway('#weekInput');
+            gateways.color = await InputGatewayFactory.createInputGateway('#colorInput');
+            gateways.checkbox1 = await InputGatewayFactory.createInputGateway('#checkboxTrue');
+            gateways.checkbox2 = await InputGatewayFactory.createInputGateway('#checkboxFalse');
+            gateways.radioGroupA = await InputGatewayFactory.createInputGateway('[name="radioGroup"]'); // One input, but grouped
+            gateways.selectSingle = await InputGatewayFactory.createInputGateway('#selectSingle');
+            gateways.selectMulti = await InputGatewayFactory.createInputGateway('#selectMulti');
+        }
+
+        initGateways();
+
+        function processInputs() {
+            const textValue = gateways.text.get();
+            const numberValue = gateways.number.get();
+            const emailValue = gateways.email.get();
+            const urlValue = gateways.url.get();
+            const telValue = gateways.tel.get();
+            const searchValue = gateways.search.get();
+            const dateValue = gateways.date.get();
+            const datetimeValue = gateways.datetime.get();
+            const timeValue = gateways.time.get();
+            const monthValue = gateways.month.get();
+            const weekValue = gateways.week.get();
+            const colorValue = gateways.color.get();
 
             // Radio handling
             let radioValue;
             try {
-                radioValue = await gateways.radioGroupA.get(); // Gets the selected value from group
+                radioValue = gateways.radioGroupA.get(); // Gets the selected value from group
             } catch (e) {
                 radioValue = null; // In case no valid input exists
             }
 
-            const checkbox1Value = await gateways.checkbox1.get();
-            const checkbox2Value = await gateways.checkbox2.get();
+            const checkbox1Value = gateways.checkbox1.get();
+            const checkbox2Value = gateways.checkbox2.get();
 
             // Select handling
-            let selectSingleValue = await gateways.selectSingle.get();
-            let selectMultiValues = await gateways.selectMulti.getMulti();
+            let selectSingleValue = gateways.selectSingle.get();
+            let selectMultiValues = gateways.selectMulti.getMulti();
 
             const processedResult = {
                 text: textValue,
