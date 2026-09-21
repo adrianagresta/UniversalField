@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InputGateway Test Sandbox</title>
+    <script type="module">
+        import InputGateway from '../dist/UniversalField.js';
+    </script>
+</head>
+
+<body>
+    <h1>FieldRegistry Test Environment</h1>
+
+    <div>
+        <label for="textInput">Text 1:</label>
+        <input type="text" id="textInput" placeholder="Enter some text..." />
+    </div>
+
+    <div>
+        <label for="numberInput">Number 1:</label>
+        <input type="number" id="n1" fieldname="n1" placeholder="Enter a number..." />
+    </div>
+
+    <div>
+        <label for="numberInput">Number 2:</label>
+        <input type="number" id="n2" fieldname="n2" placeholder="Enter a number..." />
+    </div>
+
+    <div>
+        <label for="numberInput">Number 3:</label>
+        <input type="number" id="n3" fieldname="n3" placeholder="Calculated value" />
+    </div>
+
+    <script type="module">
+        import InputGateway from '../dist/UniversalField.js';
+        import Field from '../dist/UniversalField.js';
+        // get field for n1
+        let n1 = new InputGateway("#n1");
+        let n1field = new Field(n1);
+
+    </script>
+
+</body>
+
+</html>

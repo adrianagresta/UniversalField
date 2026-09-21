@@ -6,6 +6,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "target": "esnext",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "types": [],
     "sourceMap": true,
     "declaration": true,
@@ -18,7 +22,7 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
   "include": [
     "src"

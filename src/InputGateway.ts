@@ -5,6 +5,7 @@ enum InputGatewayEvents {
     jschange = "JSCHANGE", input = "INPUT", change = "CHANGE", blur = "BLUR", focus = "FOCUS"
 }
 
+let InputGateway_DEBUG = false;
 /**
  * A gateway class for managing HTML input elements, facilitating value manipulation 
  * and event handling, including support for elements not yet present in the DOM.
@@ -89,6 +90,7 @@ class InputGateway {
         };
 
         // rebroadcast this event
+        if (InputGateway_DEBUG) console.log("InputGateway.inputHandler", data);
         this.emitEvent(data.type, { detail: data });
     }
 
@@ -104,6 +106,7 @@ class InputGateway {
         };
 
         // rebroadcast this event
+        if (InputGateway_DEBUG) console.log("InputGateway.changeHandler", data);
         this.emitEvent(data.type, { detail: data });
     }
 
@@ -467,6 +470,8 @@ class InputGateway {
 
 
 }
+
+
 
 export default InputGateway;
 export { InputGatewayEvents };

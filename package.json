@@ -1,6 +1,13 @@
 {
   "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node server.js",
+    "dev": "npm run build && node server.js",
+    "bundle": "esbuild src/InputGateway.ts --bundle --format=esm --outfile=dist/UniversalField.js --sourcemap"
+  },
   "devDependencies": {
+    "esbuild": "^0.28.0",
     "typescript": "^6.0.3"
   }
 }
