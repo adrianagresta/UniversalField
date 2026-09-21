@@ -5,30 +5,66 @@ enum InputGatewayEvents {
     jschange = "JSCHANGE", input = "INPUT", change = "CHANGE", blur = "BLUR", focus = "FOCUS"
 }
 
-let InputGateway_DEBUG = false;
+/**
+ * Generates an InputGateway promise for a given CSS selector. Awaiting the promise means awaiting 
+ * the presence of the element in the DOM. If present, it will return the InputGateway.
+ * 
+ */
+class InputGatewayFactory {
+    private static pendingGateways = new Set<{ selector: string, resolve: (gateway: InputGateway) => void }>();
+    private static observer: MutationObserver | null = null;
+
+    /**
+     * If element with css selector exists, creates an InputGateway with existing element 
+     * otherwise returns a Promise that will resolve to an InputGateway when the element is 
+     * injected into the DOM. 
+     * @param cssSelector - The CSS selector for the target element.
+     * @returns A promise that will resolve to an InputGateway when the element is found.
+     */
+    public static async createInputGateway(cssSelector: string): Promise<InputGateway> {
+        let existingGateways = document.querySelectorAll(cssSelector);
+        if (existingGateways.length > 0) {
+            return new InputGateway(cssSelector);
+        }
+
+        // if element is missing, monitor dom changes until we find it.
+        return new Promise<InputGateway>((resolve) => {
+            this.pendingGateways.add({ selector: cssSelector, resolve });
+
+            if (!this.observer) {
+                this.observer = new MutationObserver((mutations) => {
+                    const hasAdditions = mutations.some(record => record.addedNodes.length > 0);
+                    if (!hasAdditions) return;
+
+                    for (let pending of Array.from(this.pendingGateways)) {
+                        if (document.querySelector(pending.selector)) {
+                            pending.resolve(new InputGateway(pending.selector));
+                            this.pendingGateways.delete(pending);
+                        }
+                    }
+
+                    if (this.pendingGateways.size === 0 && this.observer) {
+                        this.observer.disconnect();
+                        this.observer = null;
+                    }
+                });
+                this.observer.observe(document.body, { childList: true, subtree: true });
+            }
+        });
+    }
+}
+
+var InputGateway_DEBUG = true;
 /**
  * A gateway class for managing HTML input elements, facilitating value manipulation 
  * and event handling, including support for elements not yet present in the DOM.
  */
 class InputGateway {
-    /** The CSS selector used to identify the target element. */
-    private cssSelector: string;
-    /** A Promise that resolves to the DOM element instance managed by this gateway. */
-    private element: Promise<HTMLElement>;
-    /** A Promise that resolves to the lowercased tag name of the element. */
-    private elementTag: Promise<string>;
-    /** A mapping of event types to registered callback functions. */
+    // The DOM element instance managed by this gateway.
+    private element: HTMLElement;
+
+    // Mapping of event types to registered callback functions.
     private eventHandlers: Record<InputGatewayEvents, Function[]>;
-
-    /** Internal resolver for the element promise. */
-    private resolveElement!: (value: HTMLElement) => void;
-    /** Internal resolver for the elementTag promise. */
-    private resolveElementTag!: (value: string) => void;
-
-    /** The global MutationObserver used to track DOM changes for dynamically added elements. */
-    private static mutationObserver: MutationObserver;
-    /** A set of InputGateway instances waiting for their target elements to be added to the DOM. */
-    private static missing: Set<InputGateway>;
 
     /**
      * Initializes a new instance of InputGateway.
@@ -36,34 +72,23 @@ class InputGateway {
      */
     constructor(cssSelector: string) {
         this.eventHandlers = {} as Record<InputGatewayEvents, Function[]>; // Initialize eventHandlers
-        this.cssSelector = cssSelector;
-
-        this.element = new Promise((resolve) => { this.resolveElement = resolve; });
-        this.elementTag = new Promise((resolve) => { this.resolveElementTag = resolve; });
-
-        let target = document.querySelector(cssSelector);
-        if (target) {
-            this.resolveElement(target as HTMLElement);
-            this.resolveElementTag(target.tagName.toLowerCase());
-            this.init();
-        } else {
-            InputGateway.missing.add(this);
-            if (InputGateway.missing.size === 1) {
-                InputGateway.registerMutationObserver();
-            }
-        }
+        this.element = document.querySelector(cssSelector)!;
     }
 
     /**
-     * Initializes event listeners on the element.
+     * Catches input, change, focus, and blur events on the element and rebroadcasts them
+     * for Field objects to consume.
      */
-    private async init() {
-        const el = await this.element;
-        // register for input, change, focus, and blur events on source tag
-        el.addEventListener('input', this.inputHandler.bind(this));
-        el.addEventListener('change', this.changeHandler.bind(this));
-        el.addEventListener('focus', this.focusHandler.bind(this));
-        el.addEventListener('blur', this.blurHandler.bind(this));
+    private init() {
+        const boundInputHandler = this.inputHandler.bind(this);
+        const boundChangeHandler = this.changeHandler.bind(this);
+        const boundFocusHandler = this.focusHandler.bind(this);
+        const boundBlurHandler = this.blurHandler.bind(this);
+
+        this.element.addEventListener('input', boundInputHandler);
+        this.element.addEventListener('change', boundChangeHandler);
+        this.element.addEventListener('focus', boundFocusHandler);
+        this.element.addEventListener('blur', boundBlurHandler);
     }
 
     /**
@@ -81,7 +106,7 @@ class InputGateway {
      * Receive event and rebroadcast.
      * @param evt - The InputEvent data from the source element.
      */
-    public inputHandler(evt: InputEvent): void {
+    public inputHandler(self: HTMLElement, evt: InputEvent): void {
         // fetch relevant data from source event
         let data = {
             data: evt.data,
@@ -474,4 +499,4 @@ class InputGateway {
 
 
 export default InputGateway;
-export { InputGatewayEvents };
+export { InputGatewayEvents, InputGatewayFactory };
