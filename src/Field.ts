@@ -13,8 +13,8 @@ type TDictators = {
 class FieldRegistry {
     static fields: TDictators;
 
-    public static async registerField(field: Field) {
-        let name = await field.getFieldName();
+    public static registerField(field: Field) {
+        let name = field.getFieldName();
         if (FieldRegistry.fields[name] != undefined) {
             throw new Error("Field already registered: " + name);
         }
@@ -47,14 +47,15 @@ class FieldRegistry {
 class Field {
     // Target InputGateway that this field controls.
     private target: InputGateway;
+
     // Any change in target value turns on this bit
     private isDirty: boolean;
-    // This is a unique identifier for the field, taken from the element's fieldname
-    // attribute
-    private fieldName: Promise<string>;
+
+    // This is a unique identifier for the field, taken from the element's fieldname attribute
+    private fieldName: string;
 
     // This is the field's calculation string, if any
-    private calculationString: Promise<string>;
+    private calculation: FieldCalculation | null;
 
     // When one of these is updated, we need to rerun the calculation for this field. 
     private uses: InputGateway[] = [];
@@ -62,12 +63,18 @@ class Field {
     constructor(gateway: InputGateway) {
         this.target = gateway;
         this.isDirty = false;
-        this.fieldName = this.target.getAttribute("fieldname");
+        this.fieldName = this.target.getAttribute("fieldname"); // mandatory
 
         let boundChangeHandler = this.changeHandler.bind(this);
         this.target.addHandler(InputGatewayEvents.change, boundChangeHandler);
 
-        this.calculationString = this.target.getAttribute("calculation");
+        let calculationString = this.target.getAttribute("calculation"); // optional
+        if (!calculationString || calculationString.trim() === "") {
+            this.calculation = null;
+        } else {
+            this.calculation = new FieldCalculation(calculationString);
+        }
+
     }
 
     /**
@@ -87,6 +94,7 @@ class Field {
 
         We WILL need a way to prevent cycles. 
          */
+
         this.clearDirty();
     }
 
@@ -98,8 +106,8 @@ class Field {
         this.isDirty = false;
     }
 
-    public async getFieldName() {
-        return await this.fieldName;
+    public getFieldName() {
+        return this.fieldName;
     }
 
 

@@ -97,8 +97,8 @@ class InputGateway {
      * @param attributeName - the name of an attribute to fetch
      * @returns a Promise for a string value
      */
-    public async getAttribute(attributeName: string): Promise<string> {
-        const el = await this.element;
+    public getAttribute(attributeName: string): string {
+        const el = this.element;
         return el.getAttribute(attributeName) || "";
     }
 
@@ -106,10 +106,10 @@ class InputGateway {
      * Receive event and rebroadcast.
      * @param evt - The InputEvent data from the source element.
      */
-    public inputHandler(self: HTMLElement, evt: InputEvent): void {
+    public inputHandler(evt: Event): void {
         // fetch relevant data from source event
         let data = {
-            data: evt.data,
+            data: (evt as InputEvent).data,
             target: evt.target as HTMLElement,
             type: InputGatewayEvents.input
         };
@@ -165,10 +165,6 @@ class InputGateway {
         this.emitEvent(data.type, { detail: data });
     }
 
-    static {
-        InputGateway.missing = new Set<InputGateway>();
-    }
-
     /**
      * Adds a callback handler for a specific event type.
      * @param type - The event type.
@@ -211,29 +207,27 @@ class InputGateway {
         }
     }
 
-
-
     /**
      * Intelligently set the value of a data entry element. 
      * Could be input (any type), textarea, or select.
      * @param value - The new value to assign.
      */
-    public async set(value: string | number | boolean): Promise<void> {
+    public set(value: string | number | boolean): void {
         // get tag name
-        const tag = await this.elementTag;
+        const tag = this.element.tagName.toLowerCase();
         switch (tag) {
             case "input":
-                await this.setInput(value);
+                this.setInput(value);
                 break;
             case "textarea":
-                await this.setTextArea(value);
+                this.setTextArea(value);
                 break;
             case "select":
                 let stringValue = "" + value;
-                await this.setSelect(stringValue);
+                this.setSelect(stringValue);
                 break;
             default:
-                throw new Error("Unsupported tag name: " + this.elementTag);
+                throw new Error("Unsupported tag name: " + tag);
         }
 
     }
@@ -242,11 +236,11 @@ class InputGateway {
      * Like set() but for multiple value inputs
      * @param values - The new values to assign.
      */
-    public async setMulti(values: (string | number | boolean)[]): Promise<void> {
-        const tag = await this.elementTag;
+    public setMulti(values: (string | number | boolean)[]): void {
+        const tag = this.element.tagName.toLowerCase();
         switch (tag) {
             case "select":
-                await this.setSelectMulti(values);
+                this.setSelectMulti(values);
                 break;
             default:
                 console.warn("setMulti() not supported for element type:", tag);
@@ -258,17 +252,17 @@ class InputGateway {
      * For multi-valued data, returns the first selected value.
      * @returns The current value of the element.
      */
-    public async get(): Promise<string | number | boolean> {
-        const tag = await this.elementTag;
+    public get(): string | number | boolean {
+        const tag = this.element.tagName.toLowerCase();
         switch (tag) {
             case "input":
-                return await this.getInput();
+                return this.getInput();
             case "textarea":
-                return await this.getTextArea();
+                return this.getTextArea();
             case "select":
-                return await this.getSelect();
+                return this.getSelect();
             default:
-                throw new Error("Unsupported tag name: " + this.elementTag);
+                throw new Error("Unsupported tag name: " + tag);
         }
     }
 
@@ -277,13 +271,13 @@ class InputGateway {
      * For single-valued data, returns an array containing one value.
      * @returns An array containing the current value(s).
      */
-    public async getMulti(): Promise<(string | number | boolean)[]> {
-        const tag = await this.elementTag;
+    public getMulti(): (string | number | boolean)[] {
+        const tag = this.element.tagName.toLowerCase();
         switch (tag) {
             case "select":
-                return await this.getSelectMulti();
+                return this.getSelectMulti();
             default:
-                return [await this.get()];
+                return [this.get()];
         }
     }
 
@@ -291,8 +285,8 @@ class InputGateway {
      * Coerces element to input and sets its value.
      * @param value - The value to set on the input element.
      */
-    private async setInput(value: string | number | boolean): Promise<void> {
-        const field = (await this.element) as HTMLInputElement;
+    private setInput(value: string | number | boolean): void {
+        const field = this.element as HTMLInputElement;
         const type = field.type;
 
         switch (type) {
@@ -340,8 +334,8 @@ class InputGateway {
      * Retrieves the current value of the input element.
      * @returns The value of the element.
      */
-    private async getInput(): Promise<string | number | boolean> {
-        const field = (await this.element) as HTMLInputElement;
+    private getInput(): string | number | boolean {
+        const field = this.element as HTMLInputElement;
         switch (field.type) {
             case "checkbox":
                 return field.checked;
@@ -349,7 +343,7 @@ class InputGateway {
             case "radio": {
                 const groupName = field.name;
                 if (groupName) {
-                    const radioGroup = document.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${groupName}"]`);
+                    const radioGroup = Array.from(document.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${groupName}"]`));
                     for (const radio of radioGroup) {
                         if (radio.checked) {
                             return radio.value;
@@ -391,32 +385,32 @@ class InputGateway {
      * Coerces element to text area and sets its value
      * @param value new text input
      */
-    private async setTextArea(value: string | number | boolean): Promise<void> {
-        ((await this.element) as HTMLTextAreaElement).value = String(value);
+    private setTextArea(value: string | number | boolean): void {
+        (this.element as HTMLTextAreaElement).value = String(value);
     }
 
     /**
      * Retrieves the current value of the textarea.
      * @returns The textarea value.
      */
-    private async getTextArea(): Promise<string> {
-        return ((await this.element) as HTMLTextAreaElement).value;
+    private getTextArea(): string {
+        return (this.element as HTMLTextAreaElement).value;
     }
 
     /**
      * Coerces element to select and sets its value
      * @param value - The string value to select.
      */
-    private async setSelect(value: string): Promise<void> {
-        ((await this.element) as HTMLSelectElement).value = value;
+    private setSelect(value: string): void {
+        ((this.element) as HTMLSelectElement).value = value;
     }
 
     /**
      * Retrieves the current selected value of the select element.
      * @returns The selected value.
      */
-    private async getSelect(): Promise<string> {
-        const selectElement = (await this.element) as HTMLSelectElement;
+    private getSelect(): string {
+        const selectElement = this.element as HTMLSelectElement;
         if (selectElement.multiple) {
             const first = Array.from(selectElement.selectedOptions)[0];
             return first ? first.value : "";
@@ -428,8 +422,8 @@ class InputGateway {
      * Retrieves all selected values of a multi-select element.
      * @returns Array of selected values.
      */
-    private async getSelectMulti(): Promise<(string | number | boolean)[]> {
-        const selectElement = (await this.element) as HTMLSelectElement;
+    private getSelectMulti(): (string | number | boolean)[] {
+        const selectElement = this.element as HTMLSelectElement;
         return Array.from(selectElement.selectedOptions).map((option) => option.value);
     }
 
@@ -437,8 +431,8 @@ class InputGateway {
      * Sets multiple options in a select element to selected state based on matching values.
      * @param values - Array of values to match and select.
      */
-    private async setSelectMulti(values: (string | number | boolean)[]): Promise<void> {
-        const selectElement = (await this.element) as HTMLSelectElement;
+    private setSelectMulti(values: (string | number | boolean)[]): void {
+        const selectElement = this.element as HTMLSelectElement;
         const coercedValues = new Set(values.map((value) => String(value)));
 
         Array.from(selectElement.options).forEach((option) => {
@@ -446,54 +440,6 @@ class InputGateway {
             option.selected = coercedValues.has(option.value) || coercedValues.has(text);
         });
     }
-
-    /**
-     * Registers the MutationObserver to handle dynamically added elements.
-     */
-    public static registerMutationObserver() {
-        InputGateway.mutationObserver = new MutationObserver(InputGateway.observerCallback);
-        InputGateway.mutationObserver.observe(document.body, { childList: true, subtree: true });
-    }
-
-    /**
-     * Stops the MutationObserver.
-     */
-    public static deregisterMutationObserver() {
-        InputGateway.mutationObserver.disconnect();
-    }
-
-    /**
-     * Observer callback that checks for new nodes matching missing gateways.
-     * @param mutationList - List of mutations.
-     * @param observer - The MutationObserver instance.
-     */
-    private static observerCallback(
-        mutationList: MutationRecord[],
-        observer: MutationObserver
-    ) {
-        // Optimize check: Only run querySelector if nodes were actually added
-        const hasAdditions = mutationList.some(record => record.addedNodes.length > 0);
-        if (!hasAdditions) return;
-
-        for (let record of mutationList) {
-            if (record.type === 'childList') {
-                for (let needsMatch of Array.from(InputGateway.missing)) {
-                    let target = document.querySelector(needsMatch.cssSelector);
-                    if (target) {
-                        needsMatch.resolveElement(target as HTMLElement);
-                        needsMatch.resolveElementTag(target.tagName.toLowerCase());
-                        needsMatch.init();
-                        InputGateway.missing.delete(needsMatch);
-                        if (InputGateway.missing.size === 0) {
-                            InputGateway.deregisterMutationObserver();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
 }
 
 
